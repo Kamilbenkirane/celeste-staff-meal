@@ -157,3 +157,6 @@ uv.lock
 
 # Security reports
 bandit-report.json
+
+# Agent configuration
+AGENTS.md
