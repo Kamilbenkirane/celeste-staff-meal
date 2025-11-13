@@ -157,3 +157,9 @@ uv.lock
 
 # Security reports
 bandit-report.json
+
+# Agent configuration
+AGENTS.md
+
+# Setup documentation with sensitive info
+SUPABASE_SETUP.md
