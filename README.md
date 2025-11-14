@@ -40,7 +40,7 @@ Vérifiez chaque commande avant de fermer le sac pour éviter les erreurs de pr�
 <img src="https://raw.githubusercontent.com/withceleste/celeste-python/main/logo.svg" width="32" height="32" alt="Celeste AI" title="Celeste AI">
 <img src="https://www.google.com/s2/favicons?domain=supabase.com&sz=64" width="32" height="32" alt="Supabase" title="Supabase">
 <img src="https://www.google.com/favicon.ico" width="32" height="32" alt="Google" title="Google">
-<img src="https://www.openai.com/favicon.ico" width="32" height="32" alt="OpenAI" title="OpenAI">
+<img src="https://www.google.com/s2/favicons?domain=openai.com&sz=64" width="32" height="32" alt="OpenAI" title="OpenAI">
 <img src="https://www.anthropic.com/favicon.ico" width="32" height="32" alt="Anthropic" title="Anthropic">
 <img src="https://mistral.ai/favicon.ico" width="32" height="32" alt="Mistral" title="Mistral">
 <img src="https://cohere.com/favicon.ico" width="32" height="32" alt="Cohere" title="Cohere">
