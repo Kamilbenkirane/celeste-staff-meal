@@ -11,6 +11,8 @@ from ui.components.input import render_image_input
 from ui.components.order_comparison import render_order_comparison
 from ui.components.output import render_order_details
 from ui.components.validation_result import render_validation_result
+from celeste.exceptions import MissingCredentialsError
+
 from ui.services import compare_orders, predict_order, read_qr_order
 from ui.utils import runner
 
@@ -88,11 +90,19 @@ def render_order_validator() -> None:
                 st.session_state.validator_bag_image = bag_image
                 with st.spinner("🔍 Extraction de la commande en cours..."):
                     expected_order = st.session_state.validator_order
-                    detected_order = predict_order(bag_image, expected_order=expected_order)
-                    st.session_state.validator_detected_order = detected_order
-                    st.session_state.validator_bag_image_hash = img_hash
-                    st.session_state.validator_step = 3
-                    st.rerun()
+                    try:
+                        detected_order = predict_order(bag_image, expected_order=expected_order)
+                        st.session_state.validator_detected_order = detected_order
+                        st.session_state.validator_bag_image_hash = img_hash
+                        st.session_state.validator_step = 3
+                        st.rerun()
+                    except MissingCredentialsError:
+                        st.warning(
+                            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Image Intelligence "
+                            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
+                            "d'environnement pour le fournisseur."
+                        )
+                        st.stop()
 
     elif st.session_state.validator_step == 3:
         st.markdown(

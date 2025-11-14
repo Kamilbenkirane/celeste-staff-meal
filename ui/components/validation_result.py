@@ -5,6 +5,7 @@ import re
 import streamlit as st
 
 from celeste.artifacts import AudioArtifact
+from celeste.exceptions import MissingCredentialsError
 from celeste.mime_types import AudioMimeType
 
 from staff_meal.models import ComparisonResult, Language, Order
@@ -104,7 +105,15 @@ def render_validation_result(
                 key="explanation_language",
             )
         try:
-            explanation = generate_validation_explanation(expected_order, detected_order, language)
+            try:
+                explanation = generate_validation_explanation(expected_order, detected_order, language)
+            except MissingCredentialsError:
+                st.warning(
+                    "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Text Generation "
+                    "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
+                    "d'environnement pour le fournisseur."
+                )
+                explanation = "Configuration de l'API requise pour générer l'explication."
             formatted_explanation = re.sub(
                 r'"([^"]+)"',
                 r'<strong style="color: #1976d2; font-weight: 600;">\1</strong>',
@@ -137,8 +146,16 @@ def render_validation_result(
                 if st.session_state[audio_key] is None:
                     try:
                         with st.spinner("🔊 Génération de l'audio..."):
-                            audio_content = generate_validation_explanation_audio(explanation, language)
-                            st.session_state[audio_key] = audio_content
+                            try:
+                                audio_content = generate_validation_explanation_audio(explanation, language)
+                                st.session_state[audio_key] = audio_content
+                            except MissingCredentialsError:
+                                st.warning(
+                                    "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Speech Generation "
+                                    "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
+                                    "d'environnement pour le fournisseur."
+                                )
+                                st.session_state[audio_key] = None
                     except Exception:  # nosec B110
                         st.session_state[audio_key] = None
                         st.error("⚠️ Échec de la génération audio")

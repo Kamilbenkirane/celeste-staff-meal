@@ -5,7 +5,6 @@ from typing import Any
 from celeste import create_client
 from celeste.artifacts import AudioArtifact
 from celeste.core import Capability
-from celeste.exceptions import MissingCredentialsError
 from staff_meal.models import Language, Order, Statistics, ValidationRecord
 from ui.services.client_config import get_client_config
 
@@ -42,17 +41,7 @@ async def generate_validation_explanation_async(
     if api_key is not None and api_key.get_secret_value():
         client_kwargs["api_key"] = api_key
 
-    try:
-        client = create_client(**client_kwargs)
-    except MissingCredentialsError:
-        import streamlit as st
-        st.warning(
-            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Text Generation "
-            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
-            f"d'environnement pour le fournisseur {provider.value}."
-        )
-        msg = f"Missing API key for {provider.value} provider"
-        raise ValueError(msg) from None
+    client = create_client(**client_kwargs)
 
     expected_dict = expected_order.model_dump()
     detected_dict = detected_order.model_dump()
@@ -137,17 +126,7 @@ async def generate_dashboard_insights(
     if api_key is not None and api_key.get_secret_value():
         client_kwargs["api_key"] = api_key
 
-    try:
-        client = create_client(**client_kwargs)
-    except MissingCredentialsError:
-        import streamlit as st
-        st.warning(
-            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Text Generation "
-            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
-            f"d'environnement pour le fournisseur {provider.value}."
-        )
-        msg = f"Missing API key for {provider.value} provider"
-        raise ValueError(msg) from None
+    client = create_client(**client_kwargs)
 
     total_errors = stats.total_orders - stats.complete_orders
     most_forgotten_str = ""
@@ -254,17 +233,7 @@ async def generate_validation_explanation_audio_async(
     if api_key is not None and api_key.get_secret_value():
         client_kwargs["api_key"] = api_key
 
-    try:
-        client = create_client(**client_kwargs)
-    except MissingCredentialsError:
-        import streamlit as st
-        st.warning(
-            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Speech Generation "
-            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
-            f"d'environnement pour le fournisseur {provider.value}."
-        )
-        msg = f"Missing API key for {provider.value} provider"
-        raise ValueError(msg) from None
+    client = create_client(**client_kwargs)
 
     output = await client.generate(
         prompt=explanation_text,
