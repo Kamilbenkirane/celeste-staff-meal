@@ -51,6 +51,39 @@ class OrderSource(str, Enum):
     DELIVEROO = "deliveroo"
 
 
+class Language(str, Enum):
+    """Language for AI-generated explanations."""
+
+    # Tier 1: Essential
+    FRENCH = "French"
+    ENGLISH = "English"
+    SPANISH = "Spanish"
+    ARABIC = "Arabic"
+    WOLOF = "Wolof"
+    BAMBARA = "Bambara"
+    MANDARIN_CHINESE = "Mandarin Chinese"
+    VIETNAMESE = "Vietnamese"
+    PORTUGUESE = "Portuguese"
+    ROMANIAN = "Romanian"
+    # Tier 2: High priority
+    BERBER_TAMAZIGHT = "Berber/Tamazight"
+    LINGALA = "Lingala"
+    SWAHILI = "Swahili"
+    CANTONESE = "Cantonese"
+    TURKISH = "Turkish"
+    ITALIAN = "Italian"
+    POLISH = "Polish"
+    HINDI = "Hindi"
+    # Tier 3: Additional coverage
+    FULA_FULANI = "Fula/Fulani"
+    HAUSA = "Hausa"
+    KHMER = "Khmer"
+    URDU = "Urdu"
+    BENGALI = "Bengali"
+    TAGALOG = "Tagalog"
+    TAMIL = "Tamil"
+
+
 class OrderItem(BaseModel):
     """An item expected in the order."""
 

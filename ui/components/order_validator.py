@@ -1,14 +1,17 @@
 """Order validation component - validate order with bag image."""
 
+import hashlib
+import io
+
 import streamlit as st
 
 from staff_meal.storage import save_validation_result
 from ui.components.bag_input import render_bag_image_input
+from ui.components.input import render_image_input
 from ui.components.order_comparison import render_order_comparison
 from ui.components.output import render_order_details
-from ui.components.qr_input import render_qr_input_section
 from ui.components.validation_result import render_validation_result
-from ui.services import compare_orders, predict_order
+from ui.services import compare_orders, predict_order, read_qr_order
 from ui.utils import runner
 
 
@@ -25,22 +28,43 @@ def render_order_validator() -> None:
             unsafe_allow_html=True,
         )
 
-        qr_image, order, error_message = render_qr_input_section(
+        # Render image input directly (without button)
+        qr_image = render_image_input(
             key_prefix="validator",
-            title="",
+            file_label="Télécharger une image",
+            camera_label="Prendre une photo",
+            file_help="Télécharger la photo du QR code",
+            camera_help="Prendre une photo du QR code avec la caméra",
+            preview_caption="QR Code",
+            toggle_to_camera_label="📷 Scanner un QR code",
+            toggle_to_file_label="📁 Importer un QR code",
         )
 
-        # Store order in session state and progress to step 2 if successful
-        if order:
-            st.session_state.validator_order = order
-            st.session_state.validator_error = None
-            st.session_state.validator_step = 2
-            st.rerun()
-        elif error_message:
-            st.session_state.validator_order = None
-            st.session_state.validator_error = error_message
-            st.error("❌ QR code non reconnu")
-            return
+        # Auto-process QR code when image is detected
+        if qr_image:
+            # Create hash of image to track if we've processed this specific image
+            img_bytes = io.BytesIO()
+            qr_image.save(img_bytes, format="PNG")
+            img_hash = hashlib.md5(img_bytes.getvalue(), usedforsecurity=False).hexdigest()  # nosec B324
+            last_processed_hash = st.session_state.get("validator_qr_image_hash")
+
+            if img_hash != last_processed_hash:
+                # New image detected - process automatically
+                with st.spinner("🔍 Lecture du QR code..."):
+                    try:
+                        order = read_qr_order(qr_image)
+                        st.session_state.validator_order = order
+                        st.session_state.validator_error = None
+                        st.session_state.validator_qr_image_hash = img_hash
+                        st.session_state.validator_step = 2
+                        st.rerun()
+                    except ValueError as e:
+                        st.session_state.validator_error = str(e)
+                        st.error(f"❌ QR code non reconnu: {e}")
+                        st.session_state.validator_qr_image_hash = img_hash  # Mark as processed to avoid retry loop
+        elif st.session_state.get("validator_error"):
+            # Show previous error if exists
+            st.error(f"❌ {st.session_state.validator_error}")
 
     # Step 2: Bag Image
     elif st.session_state.validator_step == 2:
@@ -64,27 +88,23 @@ def render_order_validator() -> None:
 
         bag_image = render_bag_image_input(key_prefix="validator", title="")
 
-        # Extract items button
-        st.divider()
-        extract_clicked = st.button(
-            "🔍 EXTRAIRE LES ARTICLES",
-            type="primary",
-            width="stretch",
-            help="Extraire les articles détectés dans l'image du sac",
-            disabled=bag_image is None,
-            key="validator_extract",
-        )
+        # Auto-extract items when bag image is detected
+        if bag_image:
+            # Create hash of image to track if we've processed this specific image
+            img_bytes = io.BytesIO()
+            bag_image.save(img_bytes, format="PNG")
+            img_hash = hashlib.md5(img_bytes.getvalue(), usedforsecurity=False).hexdigest()  # nosec B324
+            last_processed_hash = st.session_state.get("validator_bag_image_hash")
 
-        if extract_clicked:
-            if bag_image is None:
-                st.error("⚠️ Veuillez télécharger une image de la commande")
-            else:
+            if img_hash != last_processed_hash:
+                # New image detected - process automatically
                 # Store bag image in session state for Step 3 display
                 st.session_state.validator_bag_image = bag_image
                 with st.spinner("🔍 Extraction de la commande en cours..."):
                     expected_order = st.session_state.validator_order
                     detected_order = predict_order(bag_image, expected_order=expected_order)
                     st.session_state.validator_detected_order = detected_order
+                    st.session_state.validator_bag_image_hash = img_hash
                     st.session_state.validator_step = 3
                     st.rerun()
 
@@ -104,27 +124,7 @@ def render_order_validator() -> None:
         st.divider()
 
         if "validator_detected_order" in st.session_state and st.session_state.validator_detected_order:
-            # Side-by-side layout: Photo (left) | Order Details (right)
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.markdown("#### 📸 Image de la commande")
-                if "validator_bag_image" in st.session_state and st.session_state.validator_bag_image:
-                    st.image(
-                        st.session_state.validator_bag_image,
-                        caption="Image de la commande",
-                        width="stretch",
-                    )
-                else:
-                    st.info("Aucune image disponible")
-
-            with col2:
-                if "validator_order" in st.session_state and st.session_state.validator_order:
-                    render_order_details(st.session_state.validator_order)
-
-            st.divider()
-
-            # Compare orders
+            # Compare orders first (needed for validation result)
             comparison_result = compare_orders(
                 st.session_state.validator_order,
                 st.session_state.validator_detected_order,
@@ -146,18 +146,40 @@ def render_order_validator() -> None:
                     # Don't break the UI if saving fails
                     st.warning(f"⚠️ Impossible de sauvegarder le résultat: {e}")
 
-            # Display unified comparison view
-            render_order_comparison(
-                st.session_state.validator_order,
-                st.session_state.validator_detected_order,
-            )
-
-            # Display validation result
+            # 1. VALIDATION RESULT FIRST (most important - this is what users need to see immediately)
             render_validation_result(
                 is_complete=comparison_result.is_complete,
                 comparison_result=comparison_result,
-                order=st.session_state.validator_order,
+                expected_order=st.session_state.validator_order,
+                detected_order=st.session_state.validator_detected_order,
             )
+
+            st.divider()
+
+            # 2. Order details (secondary info)
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### 📸 Image de la commande")
+                if "validator_bag_image" in st.session_state and st.session_state.validator_bag_image:
+                    st.image(
+                        st.session_state.validator_bag_image,
+                        caption="Image de la commande",
+                        width="stretch",
+                    )
+
+            with col2:
+                if "validator_order" in st.session_state and st.session_state.validator_order:
+                    render_order_details(st.session_state.validator_order)
+
+            st.divider()
+
+            # 3. Comparison view (optional, collapsible)
+            with st.expander("📊 Voir la comparaison détaillée", expanded=True):
+                render_order_comparison(
+                    st.session_state.validator_order,
+                    st.session_state.validator_detected_order,
+                )
 
         # Button to start new validation
         st.divider()
@@ -169,6 +191,8 @@ def render_order_validator() -> None:
             st.session_state.validator_bag_image = None
             st.session_state.validator_error = None
             st.session_state.validator_saved = False
+            st.session_state.validator_qr_image_hash = None
+            st.session_state.validator_bag_image_hash = None
             st.rerun()
 
 

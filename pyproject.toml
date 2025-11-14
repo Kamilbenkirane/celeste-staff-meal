@@ -31,6 +31,7 @@ dependencies = [
     "streamlit>=1.28.0",
     "supabase>=2.0.0",
     "zxing-cpp>=2.3.0",
+    "openpyxl>=3.1.0",
 ]
 
 [dependency-groups]
@@ -137,7 +138,8 @@ disable_error_code = ["override", "return-value", "arg-type", "call-arg", "assig
 
 [tool.bandit]
 exclude_dirs = [".venv", "__pycache__"]
-skips = ["B101"] # Skip B101 (assert_used) since we use pytest
+exclude = ["scripts/generate_mock_data.py"]  # Mock data generation uses random for test data
+skips = ["B101", "B311"] # Skip B101 (assert_used) and B311 (random module for test data)
 
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"] # Allow assertions in test files

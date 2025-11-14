@@ -8,6 +8,7 @@ from PIL import Image
 
 from staff_meal.models import Order
 from staff_meal.qr import decode_qr
+from ui.services.explanation import generate_validation_explanation
 from ui.services.prediction import predict_order
 from ui.services.validation import compare_orders
 
@@ -52,4 +53,4 @@ def read_qr_order(qr_image: Image.Image | bytes | None) -> Order:
         Path(qr_path).unlink(missing_ok=True)
 
 
-__all__ = ["read_qr_order", "predict_order", "compare_orders"]
+__all__ = ["read_qr_order", "predict_order", "compare_orders", "generate_validation_explanation"]

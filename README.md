@@ -57,7 +57,15 @@ else:
 - **Order reading**: OCR from ticket or UberEats/Deliveroo integration
 - **Visual analysis**: Detection of items in the bag (boxes, drinks, sauces)
 - **Validation**: Clear "Missing / OK" screen with list of missing items
-- **Statistics**: Complete order rate, frequently forgotten products
+- **Statistics Dashboard**:
+  - Métriques avec tendances et comparaisons période précédente
+  - Visualisations interactives (graphiques Plotly)
+  - Analyse par opérateur et par source (UberEats/Deliveroo)
+  - Recommandations IA automatiques
+  - Système d'alertes pour détecter les anomalies
+  - Filtres avancés (opérateur, source, type d'erreur)
+  - Export CSV et Excel avec données enrichies
+- **Mock Data Generator**: Script pour générer des données de test réalistes
 
 ---
 
