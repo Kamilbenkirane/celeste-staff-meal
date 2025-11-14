@@ -7,6 +7,7 @@ from typing import Any
 from celeste import create_client
 from celeste.artifacts import ImageArtifact
 from celeste.core import Capability
+from celeste.exceptions import MissingCredentialsError
 from PIL import Image
 from staff_meal.models import Item, Order, OrderItem, OrderSource
 from staff_meal.order_storage import get_all_orders, save_order
@@ -221,15 +222,26 @@ def render_qr_generator() -> None:
                         default_provider="google",
                         default_model="gemini-2.5-flash-image",
                     )
-                    client = create_client(
-                        capability=Capability.IMAGE_GENERATION,
-                        provider=provider,
-                        model=model.id,
-                        api_key=api_key,
-                    )
-                    prompt = _format_order_prompt(order)
-                    output = runner.run(client.generate(prompt=prompt))
-                    st.session_state.generated_image_output = output
+                    client_kwargs = {
+                        "capability": Capability.IMAGE_GENERATION,
+                        "provider": provider,
+                        "model": model.id,
+                    }
+                    if api_key is not None and api_key.get_secret_value():
+                        client_kwargs["api_key"] = api_key
+
+                    try:
+                        client = create_client(**client_kwargs)
+                        prompt = _format_order_prompt(order)
+                        output = runner.run(client.generate(prompt=prompt))
+                        st.session_state.generated_image_output = output
+                    except MissingCredentialsError:
+                        st.warning(
+                            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Image Generation "
+                            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
+                            f"d'environnement pour le fournisseur {provider.value}."
+                        )
+                        st.stop()
 
         if "generated_image_output" in st.session_state:
             st.divider()
