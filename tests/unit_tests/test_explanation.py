@@ -58,7 +58,6 @@ class TestGenerateValidationExplanationAsync:
 
         assert result == "La commande est complète. Tous les articles sont présents."
         mock_client.generate.assert_called_once()
-        # Verify prompt includes language instruction
         call_args = mock_client.generate.call_args[1]
         assert "Generate the answer in French" in call_args["prompt"]
 
@@ -187,7 +186,6 @@ class TestGenerateValidationExplanationAsync:
 
         assert result == "The order is complete. All items are present."
         mock_client.generate.assert_called_once()
-        # Verify prompt includes English language instruction
         call_args = mock_client.generate.call_args[1]
         assert "Generate the answer in English" in call_args["prompt"]
 
@@ -221,7 +219,6 @@ class TestGenerateValidationExplanationAsync:
 
         assert result == "El pedido está completo. Todos los artículos están presentes."
         mock_client.generate.assert_called_once()
-        # Verify prompt includes Spanish language instruction
         call_args = mock_client.generate.call_args[1]
         assert "Generate the answer in Spanish" in call_args["prompt"]
 
@@ -247,14 +244,12 @@ class TestGenerateValidationExplanationAsync:
         mock_client.generate = AsyncMock(return_value=mock_output)
 
         with patch("ui.services.explanation.create_client", return_value=mock_client):
-            # Call without language parameter (should default to French)
             result = await generate_validation_explanation_async(
                 expected_order, detected_order
             )
 
         assert len(result) > 0
         mock_client.generate.assert_called_once()
-        # Verify prompt includes French language instruction (default)
         call_args = mock_client.generate.call_args[1]
         assert "Generate the answer in French" in call_args["prompt"]
 
@@ -530,7 +525,6 @@ class TestGenerateDashboardInsights:
             result = await generate_dashboard_insights(stats, records)
 
         assert len(result) > 0
-        # Verify prompt includes error type analysis
         call_args = mock_client.generate.call_args[1]
         prompt_text = call_args["prompt"]
         assert "erreurs" in prompt_text.lower() or "errors" in prompt_text.lower()

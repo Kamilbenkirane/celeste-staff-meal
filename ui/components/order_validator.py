@@ -17,18 +17,15 @@ from ui.utils import runner
 
 def render_order_validator() -> None:
     """Render order validation form with sequential steps: QR → Image → Results."""
-    # Initialize step tracking
     if "validator_step" not in st.session_state:
         st.session_state.validator_step = 1
 
-    # Step 1: QR Code
     if st.session_state.validator_step == 1:
         st.markdown(
             '<div style="text-align: center; font-size: 36px; font-weight: bold; margin: 20px 0;">📤 Scanner le QR Code</div>',
             unsafe_allow_html=True,
         )
 
-        # Render image input directly (without button)
         qr_image = render_image_input(
             key_prefix="validator",
             file_label="Télécharger une image",
@@ -40,16 +37,13 @@ def render_order_validator() -> None:
             toggle_to_file_label="📁 Importer un QR code",
         )
 
-        # Auto-process QR code when image is detected
         if qr_image:
-            # Create hash of image to track if we've processed this specific image
             img_bytes = io.BytesIO()
             qr_image.save(img_bytes, format="PNG")
             img_hash = hashlib.md5(img_bytes.getvalue(), usedforsecurity=False).hexdigest()  # nosec B324
             last_processed_hash = st.session_state.get("validator_qr_image_hash")
 
             if img_hash != last_processed_hash:
-                # New image detected - process automatically
                 with st.spinner("🔍 Lecture du QR code..."):
                     try:
                         order = read_qr_order(qr_image)
@@ -63,17 +57,14 @@ def render_order_validator() -> None:
                         st.error(f"❌ QR code non reconnu: {e}")
                         st.session_state.validator_qr_image_hash = img_hash  # Mark as processed to avoid retry loop
         elif st.session_state.get("validator_error"):
-            # Show previous error if exists
             st.error(f"❌ {st.session_state.validator_error}")
 
-    # Step 2: Bag Image
     elif st.session_state.validator_step == 2:
         st.markdown(
             '<div style="text-align: center; font-size: 36px; font-weight: bold; margin: 20px 0;">📸 Image de la commande</div>',
             unsafe_allow_html=True,
         )
 
-        # Back button to Step 1
         if st.button("← RETOUR", width="stretch", help="Retourner à l'étape 1 pour scanner un nouveau QR code"):
             st.session_state.validator_step = 1
             st.session_state.validator_order = None
@@ -81,24 +72,19 @@ def render_order_validator() -> None:
 
         st.divider()
 
-        # Display order details
         if "validator_order" in st.session_state and st.session_state.validator_order:
             render_order_details(st.session_state.validator_order)
             st.divider()
 
         bag_image = render_bag_image_input(key_prefix="validator", title="")
 
-        # Auto-extract items when bag image is detected
         if bag_image:
-            # Create hash of image to track if we've processed this specific image
             img_bytes = io.BytesIO()
             bag_image.save(img_bytes, format="PNG")
             img_hash = hashlib.md5(img_bytes.getvalue(), usedforsecurity=False).hexdigest()  # nosec B324
             last_processed_hash = st.session_state.get("validator_bag_image_hash")
 
             if img_hash != last_processed_hash:
-                # New image detected - process automatically
-                # Store bag image in session state for Step 3 display
                 st.session_state.validator_bag_image = bag_image
                 with st.spinner("🔍 Extraction de la commande en cours..."):
                     expected_order = st.session_state.validator_order
@@ -108,14 +94,12 @@ def render_order_validator() -> None:
                     st.session_state.validator_step = 3
                     st.rerun()
 
-    # Step 3: Results
     elif st.session_state.validator_step == 3:
         st.markdown(
             '<div style="text-align: center; font-size: 36px; font-weight: bold; margin: 20px 0;">✅ Résultat de la validation</div>',
             unsafe_allow_html=True,
         )
 
-        # Back button to Step 2
         if st.button("← RETOUR", width="stretch", help="Retourner à l'étape 2 pour reprendre une photo"):
             st.session_state.validator_step = 2
             st.session_state.validator_detected_order = None
@@ -124,13 +108,11 @@ def render_order_validator() -> None:
         st.divider()
 
         if "validator_detected_order" in st.session_state and st.session_state.validator_detected_order:
-            # Compare orders first (needed for validation result)
             comparison_result = compare_orders(
                 st.session_state.validator_order,
                 st.session_state.validator_detected_order,
             )
 
-            # Save validation result to database (only once per validation)
             if "validator_saved" not in st.session_state or not st.session_state.validator_saved:
                 try:
                     runner.run(
@@ -143,10 +125,8 @@ def render_order_validator() -> None:
                     )
                     st.session_state.validator_saved = True
                 except Exception as e:
-                    # Don't break the UI if saving fails
                     st.warning(f"⚠️ Impossible de sauvegarder le résultat: {e}")
 
-            # 1. VALIDATION RESULT FIRST (most important - this is what users need to see immediately)
             render_validation_result(
                 is_complete=comparison_result.is_complete,
                 comparison_result=comparison_result,
@@ -156,7 +136,6 @@ def render_order_validator() -> None:
 
             st.divider()
 
-            # 2. Order details (secondary info)
             col1, col2 = st.columns(2)
 
             with col1:
@@ -174,17 +153,14 @@ def render_order_validator() -> None:
 
             st.divider()
 
-            # 3. Comparison view (optional, collapsible)
             with st.expander("📊 Voir la comparaison détaillée", expanded=True):
                 render_order_comparison(
                     st.session_state.validator_order,
                     st.session_state.validator_detected_order,
                 )
 
-        # Button to start new validation
         st.divider()
         if st.button("🔄 Nouvelle validation", type="primary", width="stretch"):
-            # Reset state
             st.session_state.validator_step = 1
             st.session_state.validator_order = None
             st.session_state.validator_detected_order = None

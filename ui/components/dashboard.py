@@ -38,7 +38,6 @@ def render_dashboard() -> None:
     )
     st.divider()
 
-    # Date range filter
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
         start_date = st.date_input(
@@ -59,12 +58,10 @@ def render_dashboard() -> None:
 
     st.divider()
 
-    # Advanced filters
     with st.expander("🔍 Filtres avancés", expanded=False):
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            # Operator filter
             all_operators = set()
             temp_records = runner.run(
                 get_all_validation_records(
@@ -83,7 +80,6 @@ def render_dashboard() -> None:
             )
 
         with col2:
-            # Source filter
             selected_sources = st.multiselect(
                 "Source(s)",
                 options=["ubereats", "deliveroo"],
@@ -91,7 +87,6 @@ def render_dashboard() -> None:
             )
 
         with col3:
-            # Error type filter
             error_types = st.multiselect(
                 "Type(s) d'erreur",
                 options=["Aucune erreur", "Articles manquants", "Quantités insuffisantes", "Quantités excessives", "Articles supplémentaires"],
@@ -100,7 +95,6 @@ def render_dashboard() -> None:
 
     st.divider()
 
-    # Load validation records (with caching)
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def _load_records(start_dt: datetime | None, end_dt: datetime | None) -> list[ValidationRecord]:
         """Load validation records with caching."""
@@ -116,7 +110,6 @@ def render_dashboard() -> None:
         st.info("Aucune donnée disponible pour la période sélectionnée.")
         return
 
-    # Apply filters
     records = _apply_filters(
         all_records,
         operators=selected_operators if selected_operators else None,
@@ -128,7 +121,6 @@ def render_dashboard() -> None:
         st.warning("Aucune donnée ne correspond aux filtres sélectionnés.")
         return
 
-    # Show active filters
     active_filters = []
     if selected_operators:
         active_filters.append(f"Opérateurs: {', '.join(selected_operators)}")
@@ -140,10 +132,8 @@ def render_dashboard() -> None:
     if active_filters:
         st.info(f"🔍 Filtres actifs: {' | '.join(active_filters)} | {len(records)}/{len(all_records)} enregistrements")
 
-    # Calculate statistics
     stats = calculate_statistics(records)
 
-    # Detect and display alerts
     alerts = detect_alerts(stats, records)
     if alerts:
         st.markdown("#### 🚨 Alertes")
@@ -156,10 +146,8 @@ def render_dashboard() -> None:
                 st.info(f"{alert.emoji} **{alert.title}**\n\n{alert.message}")
         st.divider()
 
-    # Key metrics display with trends
     st.markdown("#### 📈 Métriques principales")
 
-    # Calculate previous period stats for comparison (with caching)
     @st.cache_data(ttl=300)
     def _load_prev_stats(prev_start_dt: datetime | None, prev_end_dt: datetime | None) -> Statistics | None:
         """Load previous period statistics with caching."""
@@ -201,7 +189,6 @@ def render_dashboard() -> None:
             prev_completion = (prev_stats.complete_orders / prev_stats.total_orders * 100)
             delta_completion = f"{completion_rate - prev_completion:+.1f}%"
 
-        # Add status badge
         status_emoji = "🔴" if completion_rate < 90 else "🟡" if completion_rate < 95 else "🟢"
         st.metric(f"{status_emoji} Taux de complétude", f"{completion_rate:.1f}%", delta=delta_completion)
 
@@ -210,13 +197,11 @@ def render_dashboard() -> None:
         if prev_stats:
             delta_error = f"{stats.error_rate - prev_stats.error_rate:+.1f}%"
 
-        # Add status badge
         error_status_emoji = "🔴" if stats.error_rate > 20 else "🟡" if stats.error_rate > 10 else "🟢"
         st.metric(f"{error_status_emoji} Taux d'erreur", f"{stats.error_rate:.1f}%", delta=delta_error)
 
     st.divider()
 
-    # AI Insights section
     st.markdown("#### 💡 Recommandations IA")
     insights_key = "dashboard_ai_insights"
     if insights_key not in st.session_state:
@@ -237,10 +222,8 @@ def render_dashboard() -> None:
 
     st.divider()
 
-    # Charts section
     st.markdown("#### 📊 Visualisations")
 
-    # Create tabs for different chart categories
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         ["📈 Tendances", "🔍 Analyse des erreurs", "📦 Articles", "👥 Performance", "📱 Sources"]
     )
@@ -260,14 +243,12 @@ def render_dashboard() -> None:
     with tab5:
         _render_source_comparison(records)
 
-    # Export functionality
     st.divider()
     st.markdown("#### 💾 Export des données")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        # Create CSV export
         csv_data = _create_csv_export(records, stats)
         st.download_button(
             label="📥 Télécharger CSV",
@@ -278,7 +259,6 @@ def render_dashboard() -> None:
         )
 
     with col2:
-        # Create Excel export
         excel_data = _create_excel_export(records, stats)
         st.download_button(
             label="📊 Télécharger Excel",
@@ -290,19 +270,10 @@ def render_dashboard() -> None:
 
 
 def _create_csv_export(records: list[ValidationRecord], stats: Statistics) -> str:
-    """Create CSV export of validation records with calculated fields.
-
-    Args:
-        records: List of validation records to export.
-        stats: Statistics object for summary.
-
-    Returns:
-        CSV string.
-    """
+    """Create CSV export of validation records with calculated fields."""
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Header with additional calculated fields
     writer.writerow(
         [
             "ID",
@@ -324,7 +295,6 @@ def _create_csv_export(records: list[ValidationRecord], stats: Statistics) -> st
         ]
     )
 
-    # Data rows
     for record in records:
         expected_items_str = ", ".join([f"{item.quantity}x {item.item.value}" for item in record.expected_order.items])
         detected_items_str = ", ".join([f"{item.quantity}x {item.item.value}" for item in record.detected_order.items])
@@ -341,7 +311,6 @@ def _create_csv_export(records: list[ValidationRecord], stats: Statistics) -> st
             [f"{item.quantity}x {item.item.value}" for item in record.comparison_result.extra_items]
         )
 
-        # Calculate error count
         error_count = (
             len(record.comparison_result.missing_items)
             + len(record.comparison_result.too_few_items)
@@ -373,7 +342,6 @@ def _create_csv_export(records: list[ValidationRecord], stats: Statistics) -> st
             ]
         )
 
-    # Add summary row
     writer.writerow([])
     writer.writerow(["RÉSUMÉ"])
     writer.writerow(["Total commandes", stats.total_orders])
@@ -385,15 +353,7 @@ def _create_csv_export(records: list[ValidationRecord], stats: Statistics) -> st
 
 
 def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> bytes:
-    """Create Excel export of validation records.
-
-    Args:
-        records: List of validation records to export.
-        stats: Statistics object for summary.
-
-    Returns:
-        Excel file as bytes.
-    """
+    """Create Excel export of validation records."""
     if not HAS_EXCEL:
         # Fallback to CSV if openpyxl not available
         csv_data = _create_csv_export(records, stats)
@@ -403,7 +363,6 @@ def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> 
     ws = wb.active
     ws.title = "Validations"
 
-    # Prepare data
     data_rows = []
     headers = [
         "ID",
@@ -470,11 +429,9 @@ def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> 
             extra_items_str,
         ])
 
-    # Write data
     for row in data_rows:
         ws.append(row)
 
-    # Style header row
     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
     for cell in ws[1]:
@@ -482,7 +439,6 @@ def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> 
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # Add summary
     summary_row = len(data_rows) + 2
     ws.cell(row=summary_row, column=1, value="RÉSUMÉ").font = Font(bold=True)
     ws.cell(row=summary_row + 1, column=1, value="Total commandes")
@@ -495,7 +451,6 @@ def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> 
     ws.cell(row=summary_row + 4, column=1, value="Taux d'erreur")
     ws.cell(row=summary_row + 4, column=2, value=f"{stats.error_rate:.1f}%")
 
-    # Save to bytes
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
@@ -503,20 +458,13 @@ def _create_excel_export(records: list[ValidationRecord], stats: Statistics) -> 
 
 
 def _render_formatted_insights(insights_text: str) -> None:
-    """Render AI insights in formatted cards with improved parsing.
-
-    Args:
-        insights_text: Raw insights text from AI.
-    """
-    # Normalize text - remove extra whitespace
+    """Render AI insights in formatted cards with improved parsing."""
     insights_text = re.sub(r"\n{3,}", "\n\n", insights_text.strip())
 
-    # Parse recommendations by multiple patterns
     lines = insights_text.split("\n")
     recommendations = []
     current_rec = ""
 
-    # Patterns to detect new recommendations
     emoji_pattern = re.compile(r"^[🔴🟡🟢⚠️📌💡]")
     bullet_pattern = re.compile(r"^[-•*]\s*")
     number_pattern = re.compile(r"^\d+[\.)]\s*")
@@ -532,7 +480,6 @@ def _render_formatted_insights(insights_text: str) -> None:
                 current_rec = ""
             continue
 
-        # Check if line starts a new recommendation
         is_new_rec = (
             emoji_pattern.match(line)
             or bullet_pattern.match(line)
@@ -547,23 +494,19 @@ def _render_formatted_insights(insights_text: str) -> None:
                 recommendations.append(current_rec.strip())
             current_rec = line
         elif current_rec:
-            # Continue current recommendation
             current_rec += " " + line
         else:
-            # First line without pattern - start new recommendation
             current_rec = line
 
     if current_rec:
         recommendations.append(current_rec.strip())
 
-    # Render each recommendation in a card
     for rec in recommendations:
         if not rec or len(rec) < 5:  # Skip very short recommendations
             continue
 
         rec_upper = rec.upper()
 
-        # Determine card color and priority based on content
         if "🔴" in rec or "CRITIQUE" in rec_upper or "CRITICAL" in rec_upper or "URGENT" in rec_upper:
             st.error(rec)
         elif "🟡" in rec or "ATTENTION" in rec_upper or "WARNING" in rec_upper or "FOCUS" in rec_upper:
@@ -575,22 +518,15 @@ def _render_formatted_insights(insights_text: str) -> None:
         elif "⚠️" in rec or "ALERTE" in rec_upper:
             st.warning(rec)
         else:
-            # Default: markdown with bullet
             st.markdown(f"📌 {rec}")
 
 
 def _render_trend_charts(records: list[ValidationRecord], stats: Statistics) -> None:
-    """Render trend analysis charts.
-
-    Args:
-        records: List of validation records.
-        stats: Statistics object.
-    """
+    """Render trend analysis charts."""
     if not records:
         st.info("Aucune donnée pour afficher les tendances.")
         return
 
-    # Completion rate over time
     records_by_date: dict[str, list[ValidationRecord]] = {}
     for record in records:
         date_key = record.timestamp.date().isoformat()
@@ -620,7 +556,6 @@ def _render_trend_charts(records: list[ValidationRecord], stats: Statistics) -> 
             }
         )
 
-        # Completion rate trend with area chart
         fig_completion = go.Figure()
         fig_completion.add_trace(
             go.Scatter(
@@ -645,7 +580,6 @@ def _render_trend_charts(records: list[ValidationRecord], stats: Statistics) -> 
         )
         st.plotly_chart(fig_completion, use_container_width=True)
 
-        # Error count trend
         fig_errors = go.Figure()
         fig_errors.add_trace(
             go.Bar(
@@ -665,13 +599,7 @@ def _render_trend_charts(records: list[ValidationRecord], stats: Statistics) -> 
 
 
 def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statistics) -> None:
-    """Render error analysis charts.
-
-    Args:
-        records: List of validation records.
-        stats: Statistics object.
-    """
-    # Error types breakdown pie chart
+    """Render error analysis charts."""
     missing_count = sum(len(r.comparison_result.missing_items) for r in records if not r.is_complete)
     too_few_count = sum(len(r.comparison_result.too_few_items) for r in records if not r.is_complete)
     too_many_count = sum(len(r.comparison_result.too_many_items) for r in records if not r.is_complete)
@@ -696,13 +624,10 @@ def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statis
         fig_pie.update_layout(height=400)
         st.plotly_chart(fig_pie, use_container_width=True)
 
-    # Heatmap: Errors by hour and day
     if stats.errors_by_hour and stats.errors_by_day:
-        # Create heatmap data
         day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         hours = list(range(24))
 
-        # Group records by day and hour
         heatmap_data: dict[str, dict[int, int]] = {day: {hour: 0 for hour in hours} for day in day_order}
 
         for record in records:
@@ -711,7 +636,6 @@ def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statis
                 hour = record.timestamp.hour
                 heatmap_data[day_name][hour] = heatmap_data[day_name].get(hour, 0) + 1
 
-        # Prepare data for heatmap
         z_data = [[heatmap_data[day][hour] for hour in hours] for day in day_order]
 
         fig_heatmap = go.Figure(
@@ -734,7 +658,6 @@ def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statis
         )
         st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    # Errors by hour - improved bar chart
     if stats.errors_by_hour:
         hours = list(range(24))
         error_counts = [stats.errors_by_hour.get(hour, 0) for hour in hours]
@@ -758,7 +681,6 @@ def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statis
         )
         st.plotly_chart(fig_hours, use_container_width=True)
 
-    # Errors by day - improved bar chart
     if stats.errors_by_day:
         day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         days = [day for day in day_order if day in stats.errors_by_day]
@@ -795,16 +717,11 @@ def _render_error_analysis_charts(records: list[ValidationRecord], stats: Statis
 
 
 def _render_item_analysis_charts(stats: Statistics) -> None:
-    """Render item analysis charts.
-
-    Args:
-        stats: Statistics object.
-    """
+    """Render item analysis charts."""
     if not stats.most_forgotten_items:
         st.info("Aucun article oublié détecté.")
         return
 
-    # Top forgotten items - horizontal bar chart
     top_items = stats.most_forgotten_items[:10]
     items_data = [{"Article": item.value, "Nombre d'oublis": count} for item, count in top_items]
     df_items = pd.DataFrame(items_data)
@@ -828,17 +745,12 @@ def _render_item_analysis_charts(stats: Statistics) -> None:
     )
     st.plotly_chart(fig_items, use_container_width=True)
 
-    # Table view
     st.markdown("**📋 Détail des articles oubliés**")
     st.dataframe(df_items, use_container_width=True, hide_index=True)
 
 
 def _render_operator_performance(records: list[ValidationRecord]) -> None:
-    """Render operator performance analysis.
-
-    Args:
-        records: List of validation records.
-    """
+    """Render operator performance analysis."""
     if not records:
         st.info("Aucune donnée pour afficher la performance des opérateurs.")
         return
@@ -849,7 +761,6 @@ def _render_operator_performance(records: list[ValidationRecord]) -> None:
         st.info("Aucun opérateur trouvé dans les données.")
         return
 
-    # Prepare data for visualization
     operators_data = []
     for operator, stats_op in operator_stats.items():
         completion_rate = (
@@ -866,7 +777,6 @@ def _render_operator_performance(records: list[ValidationRecord]) -> None:
     df_operators = pd.DataFrame(operators_data)
     df_operators = df_operators.sort_values("Taux de complétude (%)", ascending=False)
 
-    # Bar chart: Completion rate by operator
     fig_completion = go.Figure()
     colors = [
         "#00cc96" if rate >= 95 else "#ffa15a" if rate >= 90 else "#ef553b"
@@ -892,7 +802,6 @@ def _render_operator_performance(records: list[ValidationRecord]) -> None:
     )
     st.plotly_chart(fig_completion, use_container_width=True)
 
-    # Bar chart: Error rate by operator
     fig_errors = go.Figure()
     error_colors = [
         "#ef553b" if rate > 20 else "#ffa15a" if rate > 10 else "#00cc96"
@@ -915,11 +824,9 @@ def _render_operator_performance(records: list[ValidationRecord]) -> None:
     )
     st.plotly_chart(fig_errors, use_container_width=True)
 
-    # Detailed table
     st.markdown("**📋 Tableau détaillé par opérateur**")
     st.dataframe(df_operators, use_container_width=True, hide_index=True)
 
-    # Most forgotten items per operator
     st.markdown("**🔴 Articles les plus oubliés par opérateur**")
     for operator, stats_op in sorted(operator_stats.items(), key=lambda x: x[1].error_rate, reverse=True):
         if stats_op.most_forgotten_items:
@@ -934,11 +841,7 @@ def _render_operator_performance(records: list[ValidationRecord]) -> None:
 
 
 def _render_source_comparison(records: list[ValidationRecord]) -> None:
-    """Render source comparison analysis (UberEats vs Deliveroo).
-
-    Args:
-        records: List of validation records.
-    """
+    """Render source comparison analysis (UberEats vs Deliveroo)."""
     if not records:
         st.info("Aucune donnée pour comparer les sources.")
         return
@@ -949,7 +852,6 @@ def _render_source_comparison(records: list[ValidationRecord]) -> None:
         st.info("Aucune source trouvée dans les données.")
         return
 
-    # Prepare comparison data
     sources_data = []
     for source, stats_source in source_stats.items():
         completion_rate = (
@@ -965,10 +867,8 @@ def _render_source_comparison(records: list[ValidationRecord]) -> None:
 
     df_sources = pd.DataFrame(sources_data)
 
-    # Comparison bar chart
     fig_comparison = go.Figure()
 
-    # Completion rate comparison
     fig_comparison.add_trace(
         go.Bar(
             name="Taux de complétude",
@@ -980,7 +880,6 @@ def _render_source_comparison(records: list[ValidationRecord]) -> None:
         )
     )
 
-    # Error rate comparison (secondary axis)
     fig_comparison.add_trace(
         go.Bar(
             name="Taux d'erreur",
@@ -1003,7 +902,6 @@ def _render_source_comparison(records: list[ValidationRecord]) -> None:
     )
     st.plotly_chart(fig_comparison, use_container_width=True)
 
-    # Pie chart: Distribution of orders by source
     fig_pie = px.pie(
         df_sources,
         values="Total commandes",
@@ -1015,11 +913,9 @@ def _render_source_comparison(records: list[ValidationRecord]) -> None:
     fig_pie.update_layout(height=400)
     st.plotly_chart(fig_pie, use_container_width=True)
 
-    # Detailed comparison table
     st.markdown("**📋 Tableau comparatif détaillé**")
     st.dataframe(df_sources, use_container_width=True, hide_index=True)
 
-    # Error types breakdown by source
     st.markdown("**🔍 Répartition des types d'erreurs par source**")
     for source, stats_source in source_stats.items():
         source_records = [r for r in records if r.expected_order.source.value == source]
@@ -1071,11 +967,9 @@ def _apply_filters(
     """
     filtered = records
 
-    # Filter by operators
     if operators:
         filtered = [r for r in filtered if r.operator in operators]
 
-    # Filter by sources
     if sources:
         source_enums = []
         if "ubereats" in sources:
@@ -1085,7 +979,6 @@ def _apply_filters(
         if source_enums:
             filtered = [r for r in filtered if r.expected_order.source in source_enums]
 
-    # Filter by error types
     if error_types:
         filtered_by_error = []
         for record in filtered:

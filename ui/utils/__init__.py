@@ -32,7 +32,6 @@ class AsyncRunner:
         thread = threading.Thread(target=run_loop, daemon=True)
         thread.start()
 
-        # Wait for loop initialization
         while self.loop is None:
             pass
 
@@ -60,10 +59,9 @@ def get_provider_favicon_url(provider: Provider) -> str:
     Args:
         provider: Provider enum value.
 
-    Returns:
-        Favicon URL string.
+        Returns:
+            Favicon URL string.
     """
-    # Direct favicon URLs (from website implementation)
     provider_urls: dict[Provider, str] = {
         Provider.GOOGLE: "https://www.google.com/favicon.ico",
         Provider.OPENAI: "https://www.openai.com/favicon.ico",
@@ -73,12 +71,9 @@ def get_provider_favicon_url(provider: Provider) -> str:
         Provider.XAI: "https://x.ai/favicon.ico",
     }
 
-    # Check if we have a direct URL
     if provider in provider_urls:
         return provider_urls[provider]
 
-    # Fallback to Google's favicon service for other providers
-    # Map provider names to domains
     domain_map: dict[Provider, str] = {
         Provider.PERPLEXITY: "perplexity.ai",
         Provider.HUGGINGFACE: "huggingface.co",
@@ -93,7 +88,6 @@ def get_provider_favicon_url(provider: Provider) -> str:
     return f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
 
 
-# Global runner - single persistent event loop for all async operations
 runner = AsyncRunner()
 
 __all__ = ["AsyncRunner", "get_provider_favicon_url", "runner", "pil_image_to_bytes"]
