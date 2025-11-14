@@ -25,6 +25,18 @@ Vérifiez chaque commande avant de fermer le sac pour éviter les erreurs de pr�
 Éviter les erreurs de préparation en vérifiant chaque commande avant de fermer le sac. Zéro article manquant, moins de réclamations, meilleures notes sur les plateformes de livraison.
 
 <div align="center">
+
+### 🚀 [**Accéder à l'Application →**](https://celeste-staff-meal.streamlit.app/)
+
+<a href="https://celeste-staff-meal.streamlit.app/">
+  <img src="https://img.shields.io/badge/🌐_Application_Live-Streamlit_Cloud-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Application Live" />
+</a>
+
+**[https://celeste-staff-meal.streamlit.app/](https://celeste-staff-meal.streamlit.app/)**
+
+</div>
+
+<div align="center">
   <img src="assets/qr_ORD-25011.png" alt="Exemple de QR Code" width="250" style="margin: 10px;">
   <img src="assets/021763107240482641a02d40a43d449f07de84c480b390d940bfb_0.jpeg" alt="Exemple de Photo de Sac" width="250" style="margin: 10px;">
   <br>
