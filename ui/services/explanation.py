@@ -2,9 +2,11 @@
 
 from typing import Any
 
+from pydantic import SecretStr
+
 from celeste import create_client
 from celeste.artifacts import AudioArtifact
-from celeste.core import Capability
+from celeste.core import Capability, Provider
 from staff_meal.models import Language, Order, Statistics, ValidationRecord
 from ui.services.client_config import get_client_config
 
@@ -13,6 +15,9 @@ async def generate_validation_explanation_async(
     expected_order: Order,
     detected_order: Order,
     language: Language = Language.FRENCH,
+    provider: Provider | None = None,
+    model_id: str | None = None,
+    api_key: SecretStr | None = None,
 ) -> str:
     """Generate friendly explanation of validation result using Celeste text generation.
 
@@ -20,6 +25,9 @@ async def generate_validation_explanation_async(
         expected_order: Expected order from QR code.
         detected_order: Detected order from bag image.
         language: Language for the explanation (default: French).
+        provider: Provider to use (passed from sync function where session state is available).
+        model_id: Model ID to use (passed from sync function where session state is available).
+        api_key: API key override (passed from sync function where session state is available).
 
     Returns:
         Generated explanation text in the specified language.
@@ -27,16 +35,10 @@ async def generate_validation_explanation_async(
     Raises:
         ValueError: If explanation generation fails.
     """
-    provider, model, api_key = get_client_config(
-        Capability.TEXT_GENERATION,
-        default_provider="google",
-        default_model="gemini-2.5-flash-lite",
-    )
-
     client_kwargs: dict[str, Any] = {
         "capability": Capability.TEXT_GENERATION,
         "provider": provider,
-        "model": model.id,
+        "model": model_id,
     }
     # Only add api_key if it's provided and non-empty (empty SecretStr prevents env var fallback)
     if api_key is not None:
@@ -93,18 +95,41 @@ def generate_validation_explanation(
     """
     from ui.utils import runner
 
-    return runner.run(generate_validation_explanation_async(expected_order, detected_order, language))  # type: ignore[no-any-return]
+    # Read config in main thread where session state is available
+    provider, model, api_key = get_client_config(
+        Capability.TEXT_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
+    # Pass config to async function (runs in background thread without session state access)
+    return runner.run(
+        generate_validation_explanation_async(
+            expected_order,
+            detected_order,
+            language,
+            provider=provider,
+            model_id=model.id,
+            api_key=api_key,
+        )
+    )  # type: ignore[no-any-return]
 
 
 async def generate_dashboard_insights(
     stats: Statistics,
     records: list[ValidationRecord],
+    provider: Provider | None = None,
+    model_id: str | None = None,
+    api_key: SecretStr | None = None,
 ) -> str:
     """Generate AI-powered insights and recommendations for dashboard.
 
     Args:
         stats: Calculated statistics from validation records.
         records: List of validation records for analysis.
+        provider: Provider to use (passed from sync function where session state is available).
+        model_id: Model ID to use (passed from sync function where session state is available).
+        api_key: API key override (passed from sync function where session state is available).
 
     Returns:
         Generated insights text in French with recommendations.
@@ -115,16 +140,10 @@ async def generate_dashboard_insights(
     if not records:
         return "📊 Aucune donnée disponible pour générer des recommandations."
 
-    provider, model, api_key = get_client_config(
-        Capability.TEXT_GENERATION,
-        default_provider="google",
-        default_model="gemini-2.5-flash-lite",
-    )
-
     client_kwargs: dict[str, Any] = {
         "capability": Capability.TEXT_GENERATION,
         "provider": provider,
-        "model": model.id,
+        "model": model_id,
     }
     # Only add api_key if it's provided and non-empty (empty SecretStr prevents env var fallback)
     if api_key is not None:
@@ -206,18 +225,40 @@ def generate_dashboard_insights_sync(
     """
     from ui.utils import runner
 
-    return runner.run(generate_dashboard_insights(stats, records))  # type: ignore[no-any-return]
+    # Read config in main thread where session state is available
+    provider, model, api_key = get_client_config(
+        Capability.TEXT_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
+    # Pass config to async function (runs in background thread without session state access)
+    return runner.run(
+        generate_dashboard_insights(
+            stats,
+            records,
+            provider=provider,
+            model_id=model.id,
+            api_key=api_key,
+        )
+    )  # type: ignore[no-any-return]
 
 
 async def generate_validation_explanation_audio_async(
     explanation_text: str,
     language: Language = Language.FRENCH,
+    provider: Provider | None = None,
+    model_id: str | None = None,
+    api_key: SecretStr | None = None,
 ) -> AudioArtifact | bytes:
     """Generate audio from explanation text using Celeste speech generation.
 
     Args:
         explanation_text: Text explanation to convert to speech.
         language: Language for the explanation (default: French).
+        provider: Provider to use (passed from sync function where session state is available).
+        model_id: Model ID to use (passed from sync function where session state is available).
+        api_key: API key override (passed from sync function where session state is available).
 
     Returns:
         AudioArtifact with mime_type and metadata, or bytes if AudioArtifact not available.
@@ -225,16 +266,10 @@ async def generate_validation_explanation_audio_async(
     Raises:
         ValueError: If audio generation fails.
     """
-    provider, model, api_key = get_client_config(
-        Capability.SPEECH_GENERATION,
-        default_provider="google",
-        default_model="gemini-2.5-flash-preview-tts",
-    )
-
     client_kwargs: dict[str, Any] = {
         "capability": Capability.SPEECH_GENERATION,
         "provider": provider,
-        "model": model.id,
+        "model": model_id,
     }
     # Only add api_key if it's provided and non-empty (empty SecretStr prevents env var fallback)
     if api_key is not None:
@@ -319,7 +354,23 @@ def generate_validation_explanation_audio(
     """
     from ui.utils import runner
 
-    return runner.run(generate_validation_explanation_audio_async(explanation_text, language))  # type: ignore[no-any-return]
+    # Read config in main thread where session state is available
+    provider, model, api_key = get_client_config(
+        Capability.SPEECH_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-preview-tts",
+    )
+
+    # Pass config to async function (runs in background thread without session state access)
+    return runner.run(
+        generate_validation_explanation_audio_async(
+            explanation_text,
+            language,
+            provider=provider,
+            model_id=model.id,
+            api_key=api_key,
+        )
+    )  # type: ignore[no-any-return]
 
 
 __all__ = [

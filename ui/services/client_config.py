@@ -57,7 +57,15 @@ def get_client_config(
         model = models[0]  # Use first available model
 
     # Get API key from session state
-    api_key_str = st.session_state.get(f"{cap_key}_api_key", "")
+    session_key = f"{cap_key}_api_key"
+
+    # Read from session state with better error handling
+    api_key_str = st.session_state.get(session_key, "")
+
+    # Ensure we have a string (handle None case)
+    if api_key_str is None:
+        api_key_str = ""
+
     # Strip whitespace and check if non-empty
     if api_key_str and api_key_str.strip():
         api_key = SecretStr(api_key_str.strip())
