@@ -40,12 +40,15 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         default_model="gemini-2.5-flash-lite",
     )
 
-    client = create_client(
-        capability=Capability.IMAGE_INTELLIGENCE,
-        provider=provider,
-        model=model.id,
-        api_key=api_key,
-    )
+    client_kwargs = {
+        "capability": Capability.IMAGE_INTELLIGENCE,
+        "provider": provider,
+        "model": model.id,
+    }
+    if api_key is not None and api_key.get_secret_value():
+        client_kwargs["api_key"] = api_key
+
+    client = create_client(**client_kwargs)
 
     prompt_parts = [
         "You are analyzing a restaurant order bag image to verify that all items are present.",

@@ -33,12 +33,15 @@ async def generate_validation_explanation_async(
         default_model="gemini-2.5-flash-lite",
     )
 
-    client = create_client(
-        capability=Capability.TEXT_GENERATION,
-        provider=provider,
-        model=model.id,
-        api_key=api_key,
-    )
+    client_kwargs = {
+        "capability": Capability.TEXT_GENERATION,
+        "provider": provider,
+        "model": model.id,
+    }
+    if api_key is not None and api_key.get_secret_value():
+        client_kwargs["api_key"] = api_key
+
+    client = create_client(**client_kwargs)
 
     expected_dict = expected_order.model_dump()
     detected_dict = detected_order.model_dump()
@@ -115,12 +118,15 @@ async def generate_dashboard_insights(
         default_model="gemini-2.5-flash-lite",
     )
 
-    client = create_client(
-        capability=Capability.TEXT_GENERATION,
-        provider=provider,
-        model=model.id,
-        api_key=api_key,
-    )
+    client_kwargs = {
+        "capability": Capability.TEXT_GENERATION,
+        "provider": provider,
+        "model": model.id,
+    }
+    if api_key is not None and api_key.get_secret_value():
+        client_kwargs["api_key"] = api_key
+
+    client = create_client(**client_kwargs)
 
     total_errors = stats.total_orders - stats.complete_orders
     most_forgotten_str = ""
@@ -219,12 +225,15 @@ async def generate_validation_explanation_audio_async(
         default_model="gemini-2.5-flash-preview-tts",
     )
 
-    client = create_client(
-        capability=Capability.SPEECH_GENERATION,
-        provider=provider,
-        model=model.id,
-        api_key=api_key,
-    )
+    client_kwargs = {
+        "capability": Capability.SPEECH_GENERATION,
+        "provider": provider,
+        "model": model.id,
+    }
+    if api_key is not None and api_key.get_secret_value():
+        client_kwargs["api_key"] = api_key
+
+    client = create_client(**client_kwargs)
 
     output = await client.generate(
         prompt=explanation_text,

@@ -221,12 +221,15 @@ def render_qr_generator() -> None:
                         default_provider="google",
                         default_model="gemini-2.5-flash-image",
                     )
-                    client = create_client(
-                        capability=Capability.IMAGE_GENERATION,
-                        provider=provider,
-                        model=model.id,
-                        api_key=api_key,
-                    )
+                    client_kwargs = {
+                        "capability": Capability.IMAGE_GENERATION,
+                        "provider": provider,
+                        "model": model.id,
+                    }
+                    if api_key is not None and api_key.get_secret_value():
+                        client_kwargs["api_key"] = api_key
+
+                    client = create_client(**client_kwargs)
                     prompt = _format_order_prompt(order)
                     output = runner.run(client.generate(prompt=prompt))
                     st.session_state.generated_image_output = output
