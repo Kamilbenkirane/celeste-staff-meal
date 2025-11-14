@@ -28,7 +28,7 @@ def render_image_output(output: Any) -> None:
         output: Output from client.generate(). Expected to have a `content` attribute
             containing an ImageArtifact or list of ImageArtifacts, or a `render()` method.
     """
-    from celeste.artifacts import ImageArtifact  # type: ignore[import-untyped]
+    from celeste.artifacts import ImageArtifact
 
     # Celeste output should handle its own rendering
     # If it has a render method, use it
