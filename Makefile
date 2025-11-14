@@ -1,4 +1,4 @@
-.PHONY: help sync lint lint-fix format typecheck test integration-test security ci clean
+.PHONY: help sync lint lint-fix format typecheck test integration-test security ci clean generate-mock-data
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  make security   - Run Bandit security scan"
 	@echo "  make ci       - Run full CI/CD pipeline"
 	@echo "  make clean      - Clean cache directories"
+	@echo "  make generate-mock-data - Generate mock validation records (NUM_RECORDS=100 DAYS=30)"
 
 # Complete dependency sync - update lock, sync everything
 sync:
@@ -89,3 +90,21 @@ clean:
 	find . -type f -name "*.pyo" -delete 2>/dev/null || true
 	find . -type f -name ".coverage" -delete 2>/dev/null || true
 	@echo "✅ Clean complete"
+
+# Delete mock data from database
+clean-mock-data:
+	@echo "🗑️  Deleting mock validation records..."
+	@PYTHONPATH=src:. uv run python scripts/delete_mock_data.py
+	@echo "✅ Mock data deletion complete"
+
+# Generate mock data for testing dashboard
+generate-mock-data:
+	@echo "📊 Generating mock validation records..."
+	@NUM_RECORDS=$${NUM_RECORDS:-100}; \
+	DAYS=$${DAYS:-90}; \
+	PYTHONPATH=src:. uv run python scripts/generate_mock_data.py $$NUM_RECORDS $$DAYS
+	@echo "✅ Mock data generation complete"
+
+# Reset mock data (delete and regenerate)
+reset-mock-data: clean-mock-data generate-mock-data
+	@echo "🔄 Mock data reset complete"

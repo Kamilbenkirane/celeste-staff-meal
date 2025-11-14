@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from ui.components.ai_config import render_ai_config_sidebar
 from ui.components.dashboard import render_dashboard
 from ui.components.order_list import render_order_list
 from ui.components.order_validator import render_order_validator
@@ -36,6 +37,11 @@ def render() -> None:
         if st.button("📋 Commandes sauvegardées", width="stretch", type="primary" if st.session_state.page == "orders" else "secondary"):
             st.session_state.page = "orders"
             st.rerun()
+
+        st.divider()
+
+        # AI Configuration
+        render_ai_config_sidebar()
 
     # Title - large and clear for kitchen use
     st.markdown(

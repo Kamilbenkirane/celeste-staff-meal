@@ -113,4 +113,53 @@ def get_errors_by_day(records: list[ValidationRecord]) -> dict[str, int]:
     return errors_by_day
 
 
-__all__ = ["calculate_statistics", "get_most_forgotten_items", "get_errors_by_hour", "get_errors_by_day"]
+def get_statistics_by_operator(records: list[ValidationRecord]) -> dict[str, Statistics]:
+    """Get statistics grouped by operator.
+
+    Args:
+        records: List of validation records.
+
+    Returns:
+        Dictionary mapping operator name to Statistics object.
+    """
+    operators: dict[str, list[ValidationRecord]] = {}
+
+    for record in records:
+        operator_name = record.operator or "Non spécifié"
+        if operator_name not in operators:
+            operators[operator_name] = []
+        operators[operator_name].append(record)
+
+    return {op: calculate_statistics(op_records) for op, op_records in operators.items()}
+
+
+def get_statistics_by_source(records: list[ValidationRecord]) -> dict[str, Statistics]:
+    """Get statistics grouped by order source.
+
+    Args:
+        records: List of validation records.
+
+    Returns:
+        Dictionary mapping source name to Statistics object.
+    """
+    from staff_meal.models import OrderSource
+
+    sources: dict[str, list[ValidationRecord]] = {}
+
+    for record in records:
+        source_name = record.expected_order.source.value
+        if source_name not in sources:
+            sources[source_name] = []
+        sources[source_name].append(record)
+
+    return {source: calculate_statistics(source_records) for source, source_records in sources.items()}
+
+
+__all__ = [
+    "calculate_statistics",
+    "get_most_forgotten_items",
+    "get_errors_by_hour",
+    "get_errors_by_day",
+    "get_statistics_by_operator",
+    "get_statistics_by_source",
+]

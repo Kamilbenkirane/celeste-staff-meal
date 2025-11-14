@@ -2,12 +2,17 @@
 
 import random
 import streamlit as st
+from typing import Any
 
 from celeste import create_client  # type: ignore[import-untyped]
+from celeste.artifacts import ImageArtifact  # type: ignore[import-untyped]
+from celeste.core import Capability
+from PIL import Image
 from staff_meal.models import Item, Order, OrderItem, OrderSource
 from staff_meal.order_storage import get_all_orders, save_order
 from staff_meal.qr import generate_qr
 from ui.components.output import render_image_output, render_order_details
+from ui.services.client_config import get_client_config
 from ui.utils import runner
 from ui.utils.image import pil_image_to_bytes
 
@@ -245,10 +250,17 @@ def render_qr_generator() -> None:
             else:
                 with st.spinner("🎨 Génération de l'image en cours..."):
                     order = st.session_state.generated_order
+                    # Get client configuration from session state
+                    provider, model, api_key = get_client_config(
+                        Capability.IMAGE_GENERATION,
+                        default_provider="google",
+                        default_model="gemini-2.5-flash-image",
+                    )
                     client = create_client(
-                        capability="image-generation",
-                        provider="google",
-                        model="gemini-2.5-flash-image",
+                        capability=Capability.IMAGE_GENERATION,
+                        provider=provider,
+                        model=model.id,
+                        api_key=api_key,
                     )
                     prompt = _format_order_prompt(order)
                     output = runner.run(client.generate(prompt=prompt))
@@ -263,31 +275,86 @@ def render_qr_generator() -> None:
                 # Render the output - Celeste handles image display
                 render_image_output(st.session_state.generated_image_output)
 
-        # Download button
+        # Download buttons
         st.divider()
-        img_bytes = pil_image_to_bytes(st.session_state.generated_qr)
+        qr_img_bytes = pil_image_to_bytes(st.session_state.generated_qr)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                label="💾 Télécharger QR Code",
-                data=img_bytes,
-                file_name=f"qr_{st.session_state.generated_order.order_id}.png",
-                mime="image/png",
-                width="stretch",
-            )
-        with col2:
-            if st.button("➕ Créer une nouvelle commande", width="stretch", type="secondary"):
-                # Reset session state
-                st.session_state.qr_generator_items = []
-                st.session_state.qr_generator_order_id = _generate_order_id()
-                if "generated_qr" in st.session_state:
-                    del st.session_state.generated_qr
-                if "generated_order" in st.session_state:
-                    del st.session_state.generated_order
-                if "generated_image_output" in st.session_state:
-                    del st.session_state.generated_image_output
-                st.rerun()
+        # Extract generated image bytes if available
+        generated_image_bytes: bytes | None = None
+        if "generated_image_output" in st.session_state:
+            output: Any = st.session_state.generated_image_output
+            artifact: ImageArtifact | None = None
+
+            # Extract ImageArtifact from output
+            if hasattr(output, "content"):
+                content = output.content
+                if isinstance(content, ImageArtifact):
+                    artifact = content
+                elif isinstance(content, list) and content:
+                    artifact = content[0] if isinstance(content[0], ImageArtifact) else None
+
+            # Convert artifact to bytes
+            if artifact:
+                if artifact.data is not None:
+                    if isinstance(artifact.data, Image.Image):
+                        img_buffer = pil_image_to_bytes(artifact.data)
+                        generated_image_bytes = img_buffer.getvalue()
+                    elif isinstance(artifact.data, bytes):
+                        generated_image_bytes = artifact.data
+
+        # Layout: 3 columns if image exists, 2 columns otherwise
+        if generated_image_bytes:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.download_button(
+                    label="💾 Télécharger QR Code",
+                    data=qr_img_bytes,
+                    file_name=f"qr_{st.session_state.generated_order.order_id}.png",
+                    mime="image/png",
+                    width="stretch",
+                )
+            with col2:
+                st.download_button(
+                    label="🎨 Télécharger Image",
+                    data=generated_image_bytes,
+                    file_name=f"image_{st.session_state.generated_order.order_id}.png",
+                    mime="image/png",
+                    width="stretch",
+                )
+            with col3:
+                if st.button("➕ Créer une nouvelle commande", width="stretch", type="secondary"):
+                    # Reset session state
+                    st.session_state.qr_generator_items = []
+                    st.session_state.qr_generator_order_id = _generate_order_id()
+                    if "generated_qr" in st.session_state:
+                        del st.session_state.generated_qr
+                    if "generated_order" in st.session_state:
+                        del st.session_state.generated_order
+                    if "generated_image_output" in st.session_state:
+                        del st.session_state.generated_image_output
+                    st.rerun()
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    label="💾 Télécharger QR Code",
+                    data=qr_img_bytes,
+                    file_name=f"qr_{st.session_state.generated_order.order_id}.png",
+                    mime="image/png",
+                    width="stretch",
+                )
+            with col2:
+                if st.button("➕ Créer une nouvelle commande", width="stretch", type="secondary"):
+                    # Reset session state
+                    st.session_state.qr_generator_items = []
+                    st.session_state.qr_generator_order_id = _generate_order_id()
+                    if "generated_qr" in st.session_state:
+                        del st.session_state.generated_qr
+                    if "generated_order" in st.session_state:
+                        del st.session_state.generated_order
+                    if "generated_image_output" in st.session_state:
+                        del st.session_state.generated_image_output
+                    st.rerun()
 
 
 __all__ = ["render_qr_generator"]
