@@ -4,7 +4,9 @@ from typing import Any
 
 from celeste import create_client
 from celeste.artifacts import AudioArtifact
+from celeste.core import Capability
 from staff_meal.models import Language, Order, Statistics, ValidationRecord
+from ui.services.client_config import get_client_config
 
 
 async def generate_validation_explanation_async(
@@ -25,11 +27,19 @@ async def generate_validation_explanation_async(
     Raises:
         ValueError: If explanation generation fails.
     """
+    # Get client configuration from session state
+    provider, model, api_key = get_client_config(
+        Capability.TEXT_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
     # Create Celeste text generation client
     client = create_client(
-        capability="text-generation",  # type: ignore[arg-type]
-        provider="google",  # type: ignore[arg-type]
-        model="gemini-2.5-flash-lite",
+        capability=Capability.TEXT_GENERATION,
+        provider=provider,
+        model=model.id,
+        api_key=api_key,
     )
 
     # Convert orders to dict format for prompt
@@ -105,11 +115,19 @@ async def generate_dashboard_insights(
     if not records:
         return "📊 Aucune donnée disponible pour générer des recommandations."
 
+    # Get client configuration from session state
+    provider, model, api_key = get_client_config(
+        Capability.TEXT_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
     # Create Celeste text generation client
     client = create_client(
-        capability="text-generation",  # type: ignore[arg-type]
-        provider="google",  # type: ignore[arg-type]
-        model="gemini-2.5-flash-lite",
+        capability=Capability.TEXT_GENERATION,
+        provider=provider,
+        model=model.id,
+        api_key=api_key,
     )
 
     # Analyze patterns for the prompt
@@ -210,11 +228,19 @@ async def generate_validation_explanation_audio_async(
     Raises:
         ValueError: If audio generation fails.
     """
+    # Get client configuration from session state
+    provider, model, api_key = get_client_config(
+        Capability.SPEECH_GENERATION,
+        default_provider="google",
+        default_model="gemini-2.5-flash-preview-tts",
+    )
+
     # Create Celeste speech generation client
     client = create_client(
-        capability="speech-generation",  # type: ignore[arg-type]
-        provider="google",  # type: ignore[arg-type]
-        model="gemini-2.5-flash-preview-tts",
+        capability=Capability.SPEECH_GENERATION,
+        provider=provider,
+        model=model.id,
+        api_key=api_key,
     )
 
     # Use default voice 'Orus' for now (can be mapped to languages later)

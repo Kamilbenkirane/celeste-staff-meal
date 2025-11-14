@@ -6,7 +6,9 @@ from PIL import Image
 
 from celeste import create_client
 from celeste.artifacts import ImageArtifact
+from celeste.core import Capability
 from staff_meal.models import Item, Order
+from ui.services.client_config import get_client_config
 
 
 async def predict_order_async(bag_image: Image.Image, expected_order: Order | None = None) -> Order:
@@ -33,11 +35,19 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
 
     image_artifact = ImageArtifact(data=img_bytes.read())
 
+    # Get client configuration from session state
+    provider, model, api_key = get_client_config(
+        Capability.IMAGE_INTELLIGENCE,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
     # Create Celeste image intelligence client
     client = create_client(
-        capability="image-intelligence",  # type: ignore[arg-type]
-        provider="google",  # type: ignore[arg-type]
-        model="gemini-2.5-flash-lite",
+        capability=Capability.IMAGE_INTELLIGENCE,
+        provider=provider,
+        model=model.id,
+        api_key=api_key,
     )
 
     # Build comprehensive prompt with context

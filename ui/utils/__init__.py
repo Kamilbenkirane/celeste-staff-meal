@@ -4,6 +4,7 @@ import asyncio
 import threading
 from typing import Any
 
+from celeste.core import Provider
 from ui.utils.image import pil_image_to_bytes
 
 
@@ -51,7 +52,48 @@ class AsyncRunner:
         return future.result()
 
 
+def get_provider_favicon_url(provider: Provider) -> str:
+    """Get favicon URL for a provider.
+
+    Uses direct favicon URLs where available, falls back to Google's favicon service.
+
+    Args:
+        provider: Provider enum value.
+
+    Returns:
+        Favicon URL string.
+    """
+    # Direct favicon URLs (from website implementation)
+    provider_urls: dict[Provider, str] = {
+        Provider.GOOGLE: "https://www.google.com/favicon.ico",
+        Provider.OPENAI: "https://www.openai.com/favicon.ico",
+        Provider.ANTHROPIC: "https://www.anthropic.com/favicon.ico",
+        Provider.MISTRAL: "https://mistral.ai/favicon.ico",
+        Provider.COHERE: "https://cohere.com/favicon.ico",
+        Provider.XAI: "https://x.ai/favicon.ico",
+    }
+
+    # Check if we have a direct URL
+    if provider in provider_urls:
+        return provider_urls[provider]
+
+    # Fallback to Google's favicon service for other providers
+    # Map provider names to domains
+    domain_map: dict[Provider, str] = {
+        Provider.PERPLEXITY: "perplexity.ai",
+        Provider.HUGGINGFACE: "huggingface.co",
+        Provider.REPLICATE: "replicate.com",
+        Provider.STABILITYAI: "stability.ai",
+        Provider.LUMA: "lumalabs.ai",
+        Provider.TOPAZLABS: "topazlabs.com",
+        Provider.BYTEDANCE: "byteplus.com",
+    }
+
+    domain = domain_map.get(provider, f"{provider.value}.com")
+    return f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
+
+
 # Global runner - single persistent event loop for all async operations
 runner = AsyncRunner()
 
-__all__ = ["AsyncRunner", "runner", "pil_image_to_bytes"]
+__all__ = ["AsyncRunner", "get_provider_favicon_url", "runner", "pil_image_to_bytes"]
