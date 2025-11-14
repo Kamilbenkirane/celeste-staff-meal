@@ -121,12 +121,12 @@ def _render_capability_config(
     # API key override
     st.caption("API Key (leave empty to use env variable)")
     # Use the key parameter to store directly in the session state key we use
-    # This ensures consistency between what's displayed and what's stored
     # Streamlit automatically manages the session state when key is provided
+    # The value parameter is only used as initial/default value
     st.text_input(
         "API Key",
         type="password",
-        value=st.session_state.get(f"{cap_key}_api_key", ""),
+        value=st.session_state.get(f"{cap_key}_api_key", "") or "",
         key=f"{cap_key}_api_key",  # Store directly in the key we read from
         placeholder="Leave empty to use env variable",
     )
