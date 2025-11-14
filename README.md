@@ -14,7 +14,7 @@ Vérifiez chaque commande avant de fermer le sac pour éviter les erreurs de pr�
 [![Status](https://img.shields.io/badge/Status-Fully%20Deployed-blue?style=for-the-badge)]()
 [![Coverage](https://img.shields.io/badge/Coverage-99.57%25-orange?style=for-the-badge)]()
 
-[Installation](#-installation) • [Fonctionnalités](#-fonctionnalités-clés) • [Architecture](#-architecture) • [Tests](#-tests--qualité)
+[Installation](#-installation) • [Fonctionnalités](#-fonctionnalités-clés) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Tests](#-tests--qualité) • [Contribuer](#-contribuer)
 
 </div>
 
@@ -314,6 +314,39 @@ make test  # Exécuter les tests avec rapport de couverture
 - Analyses et insights du tableau de bord
 
 Tous les tests passent avec **exigence minimale de couverture de 80%** appliquée.
+
+---
+
+## 📚 Documentation
+
+Documentation complète disponible dans le dossier `docs/` :
+
+- **[Architecture du système](docs/architecture.md)** : Diagrammes d'architecture, flux de données, composants et séquences
+- **[Guide utilisateur Dashboard](docs/dashboard-guide.md)** : Guide complet pour utiliser le tableau de bord analytique
+- **[Cas d'usage avancés](docs/use-cases.md)** : Scénarios détaillés et cas d'usage réels (validation quotidienne, analyse de performances, formation, intégrations, multi-restaurants)
+
+### Documentation pour développeurs
+
+- **[Guide de contribution](CONTRIBUTING.md)** : Standards de code, processus de développement, tests et pull requests
+- **[Standards de développement](AGENTS.md)** : Guidelines techniques détaillées pour le développement
+
+---
+
+## 🤝 Contribuer
+
+Les contributions sont les bienvenues ! Veuillez consulter le [Guide de contribution](CONTRIBUTING.md) pour :
+
+- Standards de code et conventions
+- Processus de développement local
+- Guide des tests (couverture minimale 80%)
+- Processus de Pull Request
+
+**Types de contributions** :
+- 🐛 Rapports de bugs
+- 💡 Suggestions de fonctionnalités
+- 📝 Amélioration de la documentation
+- 🔧 Code (corrections et nouvelles fonctionnalités)
+- 🧪 Tests
 
 ---
 

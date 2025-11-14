@@ -15,12 +15,21 @@ from staff_meal.models import Item, Order
 from ui.services.client_config import get_client_config
 
 
-async def predict_order_async(bag_image: Image.Image, expected_order: Order | None = None) -> Order:
+async def predict_order_async(
+    bag_image: Image.Image,
+    expected_order: Order | None = None,
+    provider: Provider | None = None,
+    model_id: str | None = None,
+    api_key: SecretStr | None = None,
+) -> Order:
     """Detect order from bag image using Celeste image intelligence.
 
     Args:
         bag_image: PIL Image of bag contents.
         expected_order: Optional expected order to extract order_id and source from.
+        provider: Provider to use (passed from sync function where session state is available).
+        model_id: Model ID to use (passed from sync function where session state is available).
+        api_key: API key override (passed from sync function where session state is available).
 
     Returns:
         Detected Order object.
@@ -38,18 +47,12 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
 
     image_artifact = ImageArtifact(data=img_bytes.read())
 
-    provider, model, api_key = get_client_config(
-        Capability.IMAGE_INTELLIGENCE,
-        default_provider="google",
-        default_model="gemini-2.5-flash-lite",
-    )
-
     client_kwargs: dict[str, Any] = {
         "capability": Capability.IMAGE_INTELLIGENCE,
         "provider": provider,
-        "model": model.id,
+        "model": model_id,
     }
-    # Only add api_key if it's provided and non-empty
+    # Only add api_key if it's provided and non-empty (empty SecretStr prevents env var fallback)
     if api_key is not None:
         api_key_value = api_key.get_secret_value()
         if api_key_value and api_key_value.strip():
@@ -128,7 +131,23 @@ def predict_order(bag_image: Image.Image, expected_order: Order | None = None) -
     """
     from ui.utils import runner
 
-    return runner.run(predict_order_async(bag_image, expected_order))  # type: ignore[no-any-return]
+    # Read config in main thread where session state is available
+    provider, model, api_key = get_client_config(
+        Capability.IMAGE_INTELLIGENCE,
+        default_provider="google",
+        default_model="gemini-2.5-flash-lite",
+    )
+
+    # Pass config to async function (runs in background thread without session state access)
+    return runner.run(
+        predict_order_async(
+            bag_image,
+            expected_order,
+            provider=provider,
+            model_id=model.id,
+            api_key=api_key,
+        )
+    )  # type: ignore[no-any-return]
 
 
 __all__ = ["predict_order", "predict_order_async"]
