@@ -35,15 +35,12 @@ def render_validation_result(
     """
     st.divider()
 
-    # 1. AI Explanation Section (PRIMARY - always shown first)
     if show_explanation:
         col1, col2 = st.columns([3, 1])
         with col1:
             st.markdown("**💬 Explication:**")
         with col2:
-            # All available languages
             all_languages = [
-                # Tier 1: Essential
                 Language.FRENCH,
                 Language.ENGLISH,
                 Language.SPANISH,
@@ -54,7 +51,6 @@ def render_validation_result(
                 Language.VIETNAMESE,
                 Language.PORTUGUESE,
                 Language.ROMANIAN,
-                # Tier 2: High priority
                 Language.BERBER_TAMAZIGHT,
                 Language.LINGALA,
                 Language.SWAHILI,
@@ -63,7 +59,6 @@ def render_validation_result(
                 Language.ITALIAN,
                 Language.POLISH,
                 Language.HINDI,
-                # Tier 3: Additional coverage
                 Language.FULA_FULANI,
                 Language.HAUSA,
                 Language.KHMER,
@@ -74,7 +69,6 @@ def render_validation_result(
             ]
 
             language_display_names = {
-                # Tier 1: Essential
                 Language.FRENCH: "🇫🇷 Français",
                 Language.ENGLISH: "🇬🇧 English",
                 Language.SPANISH: "🇪🇸 Español",
@@ -85,7 +79,6 @@ def render_validation_result(
                 Language.VIETNAMESE: "🇻🇳 Tiếng Việt",
                 Language.PORTUGUESE: "🇵🇹 Português",
                 Language.ROMANIAN: "🇷🇴 Română",
-                # Tier 2: High priority
                 Language.BERBER_TAMAZIGHT: "ⵣ Tamazight",
                 Language.LINGALA: "🇨🇩 Lingála",
                 Language.SWAHILI: "🇹🇿 Kiswahili",
@@ -94,7 +87,6 @@ def render_validation_result(
                 Language.ITALIAN: "🇮🇹 Italiano",
                 Language.POLISH: "🇵🇱 Polski",
                 Language.HINDI: "🇮🇳 हिन्दी",
-                # Tier 3: Additional coverage
                 Language.FULA_FULANI: "🇬🇳 Fulfulde",
                 Language.HAUSA: "🇳🇬 Hausa",
                 Language.KHMER: "🇰🇭 ភាសាខ្មែរ",
@@ -113,14 +105,11 @@ def render_validation_result(
             )
         try:
             explanation = generate_validation_explanation(expected_order, detected_order, language)
-            # Process explanation text: replace quotes with bold formatting for item names
-            # Replace quoted text with bold blue text for better visual emphasis
             formatted_explanation = re.sub(
                 r'"([^"]+)"',
                 r'<strong style="color: #1976d2; font-weight: 600;">\1</strong>',
                 explanation,
             )
-            # Cleaner styling: subtle background, no left border, better typography
             st.markdown(
                 '<div style="background-color: #f8f9fa; padding: 24px; border-radius: 8px; margin: 15px 0; border: 1px solid #e0e0e0;">',
                 unsafe_allow_html=True,
@@ -131,14 +120,11 @@ def render_validation_result(
             )
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # Audio generation on click only (to meet 5s validation limit)
             audio_key = f"audio_{expected_order.order_id}_{detected_order.order_id}_{language.value}"
 
-            # Check if audio already generated
             if audio_key not in st.session_state:
                 st.session_state[audio_key] = None
 
-            # Button to generate audio
             col1, col2 = st.columns([1, 3])
             with col1:
                 generate_audio_clicked = st.button(
@@ -147,7 +133,6 @@ def render_validation_result(
                     help="Générer la version audio de l'explication",
                 )
 
-            # Generate audio on button click
             if generate_audio_clicked or st.session_state[audio_key] is not None:
                 if st.session_state[audio_key] is None:
                     try:
@@ -155,19 +140,14 @@ def render_validation_result(
                             audio_content = generate_validation_explanation_audio(explanation, language)
                             st.session_state[audio_key] = audio_content
                     except Exception:  # nosec B110
-                        # Silent failure - don't break UI if audio generation fails
                         st.session_state[audio_key] = None
                         st.error("⚠️ Échec de la génération audio")
 
-                # Render audio player if audio is available
                 if st.session_state[audio_key]:
                     audio_content = st.session_state[audio_key]
-                    # Extract audio bytes and handle format conversion
                     audio_bytes: bytes | None = None
 
-                    # Handle AudioArtifact with mime_type and metadata
                     if isinstance(audio_content, AudioArtifact):
-                        # Get audio data
                         if audio_content.data is not None:
                             if isinstance(audio_content.data, bytes):
                                 audio_bytes = audio_content.data
@@ -180,10 +160,8 @@ def render_validation_result(
                             with urllib.request.urlopen(audio_content.url) as response:  # nosec B310
                                 audio_bytes = response.read()
 
-                        # Convert PCM to WAV for browser playback if needed
                         if audio_bytes and hasattr(audio_content, "mime_type"):
                             if audio_content.mime_type == AudioMimeType.PCM:
-                                # Extract metadata from AudioArtifact
                                 metadata = getattr(audio_content, "metadata", {}) or {}
                                 audio_bytes = pcm_to_wav(
                                     audio_bytes,
@@ -191,20 +169,15 @@ def render_validation_result(
                                     channels=metadata.get("channels", 1),
                                     sample_width=metadata.get("sample_width", 2),
                                 )
-                    # Handle direct bytes
                     elif isinstance(audio_content, bytes):
                         audio_bytes = audio_content
 
-                    # Render audio player (let Streamlit auto-detect format)
                     if audio_bytes:
                         st.audio(audio_bytes, autoplay=False)
         except Exception:  # nosec B110
-            # Silent failure - don't break UI if explanation generation fails
             pass
 
-    # 2. Status Display (prominent, centered)
     if is_complete:
-        # Success state - large green checkmark
         st.markdown(
             '<div style="text-align: center; background-color: #e8f5e9; padding: 30px; border-radius: 10px; margin: 20px 0;">',
             unsafe_allow_html=True,
@@ -223,7 +196,6 @@ def render_validation_result(
         )
         st.markdown("</div>", unsafe_allow_html=True)
     else:
-        # Failure state - large red X with error summary
         error_count = (
             len(comparison_result.missing_items)
             + len(comparison_result.too_few_items)
@@ -248,11 +220,9 @@ def render_validation_result(
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. Error Details (SECONDARY - collapsible, only if errors exist)
     if not is_complete:
         st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("🔍 Détails des erreurs", expanded=True):
-            # Missing items
             if comparison_result.missing_items:
                 missing_list = ", ".join(
                     [
@@ -262,7 +232,6 @@ def render_validation_result(
                 )
                 st.markdown(f"**❌ Articles manquants:** {missing_list}")
 
-            # Too few items
             if comparison_result.too_few_items:
                 too_few_list = ", ".join(
                     [
@@ -272,7 +241,6 @@ def render_validation_result(
                 )
                 st.markdown(f"**⚠️ Quantités insuffisantes:** {too_few_list}")
 
-            # Too many items
             if comparison_result.too_many_items:
                 too_many_list = ", ".join(
                     [
@@ -282,7 +250,6 @@ def render_validation_result(
                 )
                 st.markdown(f"**⚠️ Quantités excessives:** {too_many_list}")
 
-            # Extra items
             if comparison_result.extra_items:
                 extra_list = ", ".join(
                     [f"{item.item.value} ({item.quantity}x)" for item in comparison_result.extra_items]

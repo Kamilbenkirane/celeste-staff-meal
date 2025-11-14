@@ -28,21 +28,18 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         msg = "Bag image cannot be None"
         raise ValueError(msg)
 
-    # Convert PIL Image to ImageArtifact
     img_bytes = io.BytesIO()
     bag_image.save(img_bytes, format="PNG")
     img_bytes.seek(0)
 
     image_artifact = ImageArtifact(data=img_bytes.read())
 
-    # Get client configuration from session state
     provider, model, api_key = get_client_config(
         Capability.IMAGE_INTELLIGENCE,
         default_provider="google",
         default_model="gemini-2.5-flash-lite",
     )
 
-    # Create Celeste image intelligence client
     client = create_client(
         capability=Capability.IMAGE_INTELLIGENCE,
         provider=provider,
@@ -50,7 +47,6 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         api_key=api_key,
     )
 
-    # Build comprehensive prompt with context
     prompt_parts = [
         "You are analyzing a restaurant order bag image to verify that all items are present.",
         "Detect all order items visible in the image and identify each item with its exact quantity.",
@@ -82,7 +78,6 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
 
     prompt = "\n".join(prompt_parts)
 
-    # Call generate with structured output schema
     output = await client.generate(
         image=image_artifact,
         prompt=prompt,
@@ -90,21 +85,17 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         output_schema=Order,
     )
 
-    # Extract detected order from output
     detected_order: Order = output.content
 
-    # Use expected order's ID and source if provided, otherwise use detected values
     if expected_order:
         detected_order.order_id = expected_order.order_id
         detected_order.source = expected_order.source
 
-    # Filter out invalid quantities (<= 0) if any
     valid_items = [item for item in detected_order.items if item.quantity > 0]
     if not valid_items:
         msg = "No valid items detected"
         raise ValueError(msg)
 
-    # Return order with valid items only
     return Order(
         order_id=detected_order.order_id,
         source=detected_order.source,
