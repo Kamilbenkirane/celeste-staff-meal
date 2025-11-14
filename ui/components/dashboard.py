@@ -18,6 +18,8 @@ try:
 except ImportError:
     HAS_EXCEL = False
 
+from celeste.exceptions import MissingCredentialsError
+
 from staff_meal.models import OrderSource, Statistics, ValidationRecord
 from staff_meal.storage import get_all_validation_records
 from ui.services.alerts import Alert, detect_alerts
@@ -216,7 +218,15 @@ def render_dashboard() -> None:
     with col2:
         if st.button("✨ Générer", key="dashboard_generate_insights", type="primary"):
             with st.spinner("Analyse en cours..."):
-                insights = generate_dashboard_insights_sync(stats, records)
+                try:
+                    insights = generate_dashboard_insights_sync(stats, records)
+                except MissingCredentialsError:
+                    st.warning(
+                        "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Text Generation "
+                        "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
+                        "d'environnement pour le fournisseur."
+                    )
+                    insights = "Configuration de l'API requise pour générer les recommandations."
                 st.session_state[insights_key] = insights
                 st.rerun()
 

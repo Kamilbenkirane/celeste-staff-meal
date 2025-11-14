@@ -4,10 +4,13 @@ import io
 
 from PIL import Image
 
+from typing import Any
+
+from pydantic import SecretStr
+
 from celeste import create_client
 from celeste.artifacts import ImageArtifact
-from celeste.core import Capability
-from celeste.exceptions import MissingCredentialsError
+from celeste.core import Capability, Provider
 from staff_meal.models import Item, Order
 from ui.services.client_config import get_client_config
 
@@ -41,7 +44,7 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         default_model="gemini-2.5-flash-lite",
     )
 
-    client_kwargs = {
+    client_kwargs: dict[str, Any] = {
         "capability": Capability.IMAGE_INTELLIGENCE,
         "provider": provider,
         "model": model.id,
@@ -49,17 +52,7 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
     if api_key is not None and api_key.get_secret_value():
         client_kwargs["api_key"] = api_key
 
-    try:
-        client = create_client(**client_kwargs)
-    except MissingCredentialsError:
-        import streamlit as st
-        st.warning(
-            "⚠️ **API Key manquante** : Veuillez configurer la clé API pour Image Intelligence "
-            "dans la barre latérale (section ⚙️ Celeste AI config) ou définir la variable "
-            f"d'environnement pour le fournisseur {provider.value}."
-        )
-        msg = f"Missing API key for {provider.value} provider"
-        raise ValueError(msg) from None
+    client = create_client(**client_kwargs)
 
     prompt_parts = [
         "You are analyzing a restaurant order bag image to verify that all items are present.",
