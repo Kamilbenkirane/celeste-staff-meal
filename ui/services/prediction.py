@@ -49,8 +49,11 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         "provider": provider,
         "model": model.id,
     }
-    if api_key is not None and api_key.get_secret_value():
-        client_kwargs["api_key"] = api_key
+    # Only add api_key if it's provided and non-empty
+    if api_key is not None:
+        api_key_value = api_key.get_secret_value()
+        if api_key_value and api_key_value.strip():
+            client_kwargs["api_key"] = api_key
 
     client = create_client(**client_kwargs)
 

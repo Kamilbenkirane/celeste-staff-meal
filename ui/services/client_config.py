@@ -58,7 +58,11 @@ def get_client_config(
 
     # Get API key from session state
     api_key_str = st.session_state.get(f"{cap_key}_api_key", "")
-    api_key = SecretStr(api_key_str) if api_key_str else None
+    # Strip whitespace and check if non-empty
+    if api_key_str and api_key_str.strip():
+        api_key = SecretStr(api_key_str.strip())
+    else:
+        api_key = None
 
     return provider, model, api_key
 
