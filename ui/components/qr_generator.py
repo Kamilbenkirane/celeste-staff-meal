@@ -4,8 +4,8 @@ import random
 import streamlit as st
 from typing import Any
 
-from celeste import create_client  # type: ignore[import-untyped]
-from celeste.artifacts import ImageArtifact  # type: ignore[import-untyped]
+from celeste import create_client
+from celeste.artifacts import ImageArtifact
 from celeste.core import Capability
 from PIL import Image
 from staff_meal.models import Item, Order, OrderItem, OrderSource
@@ -282,12 +282,12 @@ def render_qr_generator() -> None:
         # Extract generated image bytes if available
         generated_image_bytes: bytes | None = None
         if "generated_image_output" in st.session_state:
-            output: Any = st.session_state.generated_image_output
+            generated_output: Any = st.session_state.generated_image_output
             artifact: ImageArtifact | None = None
 
             # Extract ImageArtifact from output
-            if hasattr(output, "content"):
-                content = output.content
+            if hasattr(generated_output, "content"):
+                content = generated_output.content
                 if isinstance(content, ImageArtifact):
                     artifact = content
                 elif isinstance(content, list) and content:

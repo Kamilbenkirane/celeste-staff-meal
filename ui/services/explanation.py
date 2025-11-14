@@ -246,7 +246,7 @@ async def generate_validation_explanation_audio_async(
     # Use default voice 'Orus' for now (can be mapped to languages later)
     output = await client.generate(
         prompt=explanation_text,
-        voice="Orus",  # type: ignore[arg-type]
+        voice="Orus",
     )
 
     # Extract audio content from output

@@ -304,7 +304,7 @@ class TestGenerateValidationExplanationAsync:
 
         mock_output = MagicMock()
         del mock_output.content  # Remove content attribute
-        mock_output.__str__ = MagicMock(return_value="La commande est complète.")
+        mock_output.configure_mock(__str__=lambda self: "La commande est complète.")
 
         mock_client = MagicMock()
         mock_client.generate = AsyncMock(return_value=mock_output)
