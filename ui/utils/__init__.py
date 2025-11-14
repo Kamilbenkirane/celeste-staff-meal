@@ -54,27 +54,24 @@ class AsyncRunner:
 def get_provider_favicon_url(provider: Provider) -> str:
     """Get favicon URL for a provider.
 
-    Uses direct favicon URLs where available, falls back to Google's favicon service.
+    Uses Google's favicon service API which supports CORS, avoiding direct favicon.ico
+    requests that may be blocked by CORS policy.
 
     Args:
         provider: Provider enum value.
 
-        Returns:
-            Favicon URL string.
+    Returns:
+        Favicon URL string.
     """
-    provider_urls: dict[Provider, str] = {
-        Provider.GOOGLE: "https://www.google.com/favicon.ico",
-        Provider.OPENAI: "https://www.openai.com/favicon.ico",
-        Provider.ANTHROPIC: "https://www.anthropic.com/favicon.ico",
-        Provider.MISTRAL: "https://mistral.ai/favicon.ico",
-        Provider.COHERE: "https://cohere.com/favicon.ico",
-        Provider.XAI: "https://x.ai/favicon.ico",
-    }
-
-    if provider in provider_urls:
-        return provider_urls[provider]
-
+    # Map all providers to their domains for Google's favicon service
+    # This avoids CORS issues with direct favicon.ico requests
     domain_map: dict[Provider, str] = {
+        Provider.GOOGLE: "google.com",
+        Provider.OPENAI: "openai.com",
+        Provider.ANTHROPIC: "anthropic.com",
+        Provider.MISTRAL: "mistral.ai",
+        Provider.COHERE: "cohere.com",
+        Provider.XAI: "x.ai",
         Provider.PERPLEXITY: "perplexity.ai",
         Provider.HUGGINGFACE: "huggingface.co",
         Provider.REPLICATE: "replicate.com",
@@ -85,6 +82,7 @@ def get_provider_favicon_url(provider: Provider) -> str:
     }
 
     domain = domain_map.get(provider, f"{provider.value}.com")
+    # Use Google's favicon service API which supports CORS
     return f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
 
 
