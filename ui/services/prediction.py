@@ -94,7 +94,7 @@ async def predict_order_async(
     output = await client.generate(
         image=image_artifact,
         prompt=prompt,
-        thinking_budget=0,
+        thinking_budget=0,  # Set to 0 for faster image understanding
         output_schema=Order,
     )
 

@@ -105,8 +105,23 @@ def render_order_validator() -> None:
                         st.stop()
 
     elif st.session_state.validator_step == 3:
+        # Compute comparison result early to determine icon for title
+        comparison_result = None
+        if (
+            "validator_detected_order" in st.session_state
+            and st.session_state.validator_detected_order
+            and "validator_order" in st.session_state
+            and st.session_state.validator_order
+        ):
+            comparison_result = compare_orders(
+                st.session_state.validator_order,
+                st.session_state.validator_detected_order,
+            )
+
+        # Determine icon based on validation status
+        icon = "✅" if comparison_result and comparison_result.is_complete else "❌" if comparison_result else "📋"
         st.markdown(
-            '<div style="text-align: center; font-size: 36px; font-weight: bold; margin: 20px 0;">✅ Résultat de la validation</div>',
+            f'<div style="text-align: center; font-size: 36px; font-weight: bold; margin: 20px 0;">{icon} Résultat de la validation</div>',
             unsafe_allow_html=True,
         )
 
@@ -117,11 +132,7 @@ def render_order_validator() -> None:
 
         st.divider()
 
-        if "validator_detected_order" in st.session_state and st.session_state.validator_detected_order:
-            comparison_result = compare_orders(
-                st.session_state.validator_order,
-                st.session_state.validator_detected_order,
-            )
+        if comparison_result:
 
             if "validator_saved" not in st.session_state or not st.session_state.validator_saved:
                 try:
