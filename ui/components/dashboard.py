@@ -18,6 +18,8 @@ try:
 except ImportError:
     HAS_EXCEL = False
 
+from celeste.exceptions import MissingCredentialsError
+
 from staff_meal.models import OrderSource, Statistics, ValidationRecord
 from staff_meal.storage import get_all_validation_records
 from ui.services.alerts import Alert, detect_alerts

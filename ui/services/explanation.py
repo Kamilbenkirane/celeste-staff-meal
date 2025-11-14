@@ -33,7 +33,7 @@ async def generate_validation_explanation_async(
         default_model="gemini-2.5-flash-lite",
     )
 
-    client_kwargs = {
+    client_kwargs: dict[str, Any] = {
         "capability": Capability.TEXT_GENERATION,
         "provider": provider,
         "model": model.id,
@@ -118,7 +118,7 @@ async def generate_dashboard_insights(
         default_model="gemini-2.5-flash-lite",
     )
 
-    client_kwargs = {
+    client_kwargs: dict[str, Any] = {
         "capability": Capability.TEXT_GENERATION,
         "provider": provider,
         "model": model.id,
@@ -225,7 +225,7 @@ async def generate_validation_explanation_audio_async(
         default_model="gemini-2.5-flash-preview-tts",
     )
 
-    client_kwargs = {
+    client_kwargs: dict[str, Any] = {
         "capability": Capability.SPEECH_GENERATION,
         "provider": provider,
         "model": model.id,

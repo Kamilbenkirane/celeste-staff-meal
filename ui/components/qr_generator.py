@@ -1,8 +1,9 @@
 """QR code generator component - create order and generate QR code."""
 
 import random
-import streamlit as st
 from typing import Any
+
+import streamlit as st
 
 from celeste import create_client
 from celeste.artifacts import ImageArtifact
@@ -222,7 +223,7 @@ def render_qr_generator() -> None:
                         default_provider="google",
                         default_model="gemini-2.5-flash-image",
                     )
-                    client_kwargs = {
+                    client_kwargs: dict[str, Any] = {
                         "capability": Capability.IMAGE_GENERATION,
                         "provider": provider,
                         "model": model.id,

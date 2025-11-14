@@ -4,9 +4,13 @@ import io
 
 from PIL import Image
 
+from typing import Any
+
+from pydantic import SecretStr
+
 from celeste import create_client
 from celeste.artifacts import ImageArtifact
-from celeste.core import Capability
+from celeste.core import Capability, Provider
 from staff_meal.models import Item, Order
 from ui.services.client_config import get_client_config
 
@@ -40,7 +44,7 @@ async def predict_order_async(bag_image: Image.Image, expected_order: Order | No
         default_model="gemini-2.5-flash-lite",
     )
 
-    client_kwargs = {
+    client_kwargs: dict[str, Any] = {
         "capability": Capability.IMAGE_INTELLIGENCE,
         "provider": provider,
         "model": model.id,
